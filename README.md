@@ -1,259 +1,463 @@
-# 镜核叙事数据包协议引擎
+# Upstream Narrative Package Protocol Specification
+# 上游镜核叙事数据包协议文本规范
 
-自然语言 → 结构化叙事数据包的上游协议方法与案例库。
+A protocol specification for translating narrative input into structured narrative packages.  
+This project treats the **narrative package itself as a final product**, not merely as an intermediate artifact before chapter generation.
 
-## 项目定位
-
-本项目围绕“自然语言 → 结构化叙事数据包”的上游协议展开，当前以协议文本、案例运行与迭代记录为主，长期目标是形成可复用的内容流程中间层。
-
-## 为什么“直接喂海量网文”和“先转译为叙事数据包再喂”不是一回事
-
-很多人会把这两条路线理解为“都是给 AI 更多网文数据”，区别只是一个更自由、一个更结构化。  
-这其实不准确。
-
-两者的本质区别，不在于“信息多少”，而在于：**模型到底学到什么，以及叙事控制能力被放在了哪一层。**
-
-### 1. 直接喂海量网文，模型主要学到的是“叙事表象分布”
-
-如果把大量原始网文章节直接输入通用模型，模型更容易学到的是：
-
-- 什么样的句子像网文
-- 什么样的节奏像爽文/悬疑/升级流
-- 什么桥段常和什么桥段相邻
-- 什么情绪推进常对应什么动作描写
-- 什么对白风格、场面节奏、章节收束方式更像某类作品
-
-这条路线的核心价值，在于让模型更像“会写网文”。
-
-但它的局限也很明显：
-
-- 模型学到的是**文本表面统计规律**
-- 许多关键叙事约束仍然停留在隐式层
-- 伏笔层级、视角边界、信息权限、异常规则控制，很难被统一、稳定、显式地学到
-- 模型可能“写得像”，但不一定“写得稳”
-
-换句话说，直接喂原始网文，更像是在训练一种**叙事风格感**和**语感分布能力**。
+一套用于将叙事输入转译为结构化叙事数据包的协议文本规范。  
+本项目将**叙事数据包本身视为目标产物**，而不只是章节生成之前的中间材料。
 
 ---
 
-### 2. 先转译为叙事数据包，再输入模型，模型学到的是“叙事中间层”
+## Overview ｜ 项目概览
 
-镜核叙事数据包协议引擎的目标，不是把原始网文简单做标签化整理，  
-而是把章节中的隐式叙事要素，转译成可执行、可裁决、可控的中间表示。
+This repository presents the public overview edition of an upstream narrative package protocol.  
+Its purpose is to define how natural-language narrative input is translated into a structured, bounded, and reusable narrative package.
+
+本仓库展示的是一套上游叙事数据包协议的公开概览版。  
+其目标是定义：如何将自然语言叙事输入，转译为**结构化、低歧义、可复用**的叙事数据包。
+
+This project is **not**:
+
+- a writing assistant
+- a free-form story generator
+- a chapter generation tool
+- a general-purpose text summarizer
+
+本项目**不是**：
+
+- 写作助手
+- 自由创作器
+- 章节生成工具
+- 通用文本摘要器
+
+It is an **upstream protocol specification** for narrative structuring.
+
+它是一份面向**上游叙事结构转译**的协议文本规范。
+
+---
+
+## Positioning ｜ 项目定位
+
+The protocol is designed for the upstream stage of a narrative workflow.
+
+Its responsibility is to:
+
+- read the current narrative input
+- identify directly supported information
+- organize that information into a structured narrative package
+- update a boundary summary for later reference
+
+该协议定位于叙事工作流的上游阶段。
+
+它的职责是：
+
+- 读取当前叙事输入
+- 识别当前文本中可直接成立的信息
+- 将信息整理为结构化叙事数据包
+- 更新可供后续章节参考的边界摘要
+
+It does **not**:
+
+- generate chapter prose
+- expand missing content
+- invent worldbuilding
+- treat historical summaries as current evidence
+
+它**不**负责：
+
+- 生成章节正文
+- 补全缺失内容
+- 新增世界观设定
+- 将历史摘要当作本章证据
+
+---
+
+## Product Goal ｜ 产品目标
+
+The core product goal of this specification is:
+
+> to make the narrative package itself a stable, inspectable, and reusable final output.
+
+本协议当前的核心产品目标是：
+
+> 让叙事数据包本身成为一种稳定、可检查、可复用的最终产物。
+
+This means the package can exist independently as:
+
+- an archival unit
+- a testing object
+- a comparison target across protocol versions
+- a continuity reference layer
+- a standard interface for downstream or adjacent systems
+
+这意味着，叙事数据包可以独立作为：
+
+- 存档单元
+- 测试对象
+- 协议版本对比对象
+- 连续性参照层
+- 下游系统或相邻系统的标准接口
+
+Downstream chapter generation is only **one possible application** of the package, not its sole purpose.
+
+下游章节生成只是叙事数据包的**一种应用方向**，不是它存在的唯一目的。
+
+---
+
+## Inputs ｜ 输入
+
+The current protocol accepts two input sources:
+
+1. Boundary Summary from previous context  
+2. Author-provided natural-language text for the current chapter
+
+当前协议面向两类输入：
+
+1. 上文规则边界摘要  
+2. 当前章节作者自然语言文本
+
+---
+
+## Outputs ｜ 输出
+
+The protocol produces two outputs:
+
+1. Narrative Package  
+2. Updated Boundary Summary
+
+协议输出两部分内容：
+
+1. 叙事数据包  
+2. 更新后的上文规则边界摘要
+
+---
+
+## Narrative Package Structure ｜ 叙事数据包结构
+
+The narrative package uses a three-layer structure:
+
+叙事数据包采用三层结构：
+
+### L1 World Rules ｜ L1 世界规则
+
+Used to record anomalous facts directly established in the current chapter text.
+
+Examples:
+
+- anomalous phenomena
+- confirmed abilities
+- anomalous equipment
+- anomalous individuals
+- spatial anomalies
+
+用于记录当前章节文本中**直接成立的异常事实**。
 
 例如：
 
-- 哪些内容属于 **L1 世界规则**
-- 哪些内容属于 **L2 叙事骨架**
-- 哪些内容属于 **L3 叙事血肉**
-- 哪些信息可以明示，哪些只能暗示
-- 哪些内容仅角色自知，哪些不能公共暴露
-- 哪些是稳定状态，哪些只是瞬时情绪
-- 哪些可以扩写，哪些必须保留留白
+- 异常现象
+- 已成立能力
+- 异常装备
+- 异常个体
+- 空间异常
 
-这意味着，模型不再只是学“这一章像不像网文”，  
-而是在学：
+**Constraint ｜ 约束**  
+L1 only records what is directly supported by the current text.  
+Historical boundary summaries are not treated as current-chapter evidence.
 
-- 这一章如何被拆解
-- 这一章如何被组织
-- 这一章的叙事边界如何被裁决
-- 这一章的正文如何在约束内执行
-
-也就是说，这条路线训练的不只是“生成能力”，而是**叙事控制语法**。
+L1 仅收录当前文本可以直接支撑的异常事实。  
+历史边界摘要不能视为本章直接证据。
 
 ---
 
-### 3. 前者主要学习“像什么”，后者主要学习“按什么规则生成”
+### L2 Narrative Skeleton ｜ L2 叙事骨架
 
-这是两者最核心的区别。
+Used to organize the structural backbone of the current chapter.
 
-#### 直接喂原始网文
-模型更容易学到：
+Examples:
 
-- 风格
-- 语气
-- 节奏
-- 套路
-- 爽点分布
-- 常见桥段共现关系
+- chapter type
+- roles
+- role relations
+- scenes
+- time nodes
+- event chains
+- core conflict
+- chapter goal
+- progression points
+- suspense
 
-这是对“叙事表象”的学习。
+用于整理当前章节的结构主干。
 
-#### 先转成叙事数据包再输入
-模型更容易学到：
+例如：
 
-- 规则如何分层
-- 事件如何归骨架
-- 情绪如何只服务动作而不膨胀为人格
-- 视角如何受限
-- 权限如何控制
-- 异常如何被裁决为明示、暗示或禁用
-- 正文如何在边界内展开
-
-这是对“叙事结构与执行逻辑”的学习。
-
-一句话概括：
-
-> 直接喂原始网文，模型学的是“网文感”。  
-> 先转译为叙事数据包，模型学的是“网文感 + 叙事控制语法”。
-
----
-
-### 4. 两者的数据价值也完全不同
-
-#### 原始网文数据的价值
-更接近通用叙事语料价值：
-
-- 能提升模型的网文风格拟合能力
-- 能帮助模型学习章节节奏、对白习惯、场面推进
-- 但替代性也更强，因为别人也能获得大量类似文本
-
-#### 叙事数据包化后的价值
-更接近专有结构化资产价值：
-
-- 你的分层方式
-- 你的裁决逻辑
-- 你的边界设计
-- 你的最小扩写原则
-- 你的上游/下游接口思维
-- 你的可执行叙事中间表示
-
-这部分不是简单抓取文本就能得到的。  
-它包含的是一种**被显式定义、可复用、可规模化执行的叙事操作层**。
-
-因此，原始文本更像燃料，  
-而叙事数据包更像图纸。
-
----
-
-### 5. 这不是“多做一步标注”，而是“改变模型学习的单位”
-
-很多人会误以为：
-
-> “先转译为数据包”只是给原始文本加了一层标签。
-
-这也不准确。
-
-因为这里改变的不只是数据格式，  
-而是模型面对叙事内容时的**学习单位**。
-
-#### 直接喂原始网文时
-模型主要从以下层面学习：
-
-- token
-- 句子
-- 段落
-- 篇章表面分布
-
-#### 先转成叙事数据包时
-模型开始学习：
-
-- 规则项
+- 章节类型
+- 角色
+- 角色关系
+- 场景
+- 时间节点
 - 事件链
-- 权限字段
-- 视角边界
-- 调用边界
-- 裁决结果
-- 可执行接口结构
-
-这会让模型不只是学会“怎么写”，  
-还会逐渐学会“为什么这部分该这样被组织”。
-
-这就是镜核叙事数据包协议引擎想建立的核心能力：  
-**把原本隐式、混杂、难以工业化复用的叙事内容，转译为可执行的叙事中间层。**
+- 核心冲突
+- 章节目标
+- 推进点
+- 悬念
 
 ---
 
-### 6. 最优路线通常不是二选一，而是双轨结合
+### L3 Narrative Texture ｜ L3 叙事血肉
 
-本项目并不认为原始网文语料没有价值。  
-恰恰相反，原始网文仍然是语言质感、节奏肌肉、题材经验的重要来源。
+Used to preserve perceptual and expressive material from the current chapter.
 
-更合理的理解是：
+Examples:
 
-- **原始网文语料**负责保留叙事表层能力
-- **叙事数据包语料**负责注入结构化控制能力
+- emotion / motivation → action links
+- strong visual anchors
+- original author lines
+- rhythmic phrases
+- slogan-like expressions
+- distinctive expressive traces
 
-前者让模型更像会写，  
-后者让模型更像会按边界写。
+用于保留当前章节中的感知层与表达层信息。
 
-镜核叙事数据包协议引擎真正关注的，不是单纯提升“像不像网文”，  
-而是进一步提升：
+例如：
 
-- 可控性
-- 稳定性
-- 边界遵循能力
-- 视角与权限一致性
-- 上下游协作的低歧义执行能力
+- 情绪 / 动机 → 行动链
+- 强画面锚点
+- 作者原句
+- 节奏句
+- 口号式表达
+- 高辨识表达痕迹
 
 ---
 
-### 7. 本项目的核心立场
+## Core Principles ｜ 核心原则
 
-镜核叙事数据包协议引擎，不把“海量网文”视为最终形态的数据资产。  
-本项目更关注的是：
+The current freeze-oriented direction of the protocol follows these principles:
 
-> 如何把海量叙事文本，转译为可执行、可裁决、可迭代、可规模化调用的叙事中间表示。
+当前冻结方向下，本协议遵循以下核心原则：
 
-因此，本项目关注的不是单纯“让模型学会写网文”，  
-而是更进一步：
+### 1. No new setting injection ｜ 不新增设定
+The protocol must not invent worldbuilding, mechanisms, relationships, or facts not directly supported by the input text.
 
-- 让模型理解叙事边界
-- 让模型学习规则分层
-- 让模型习得信息权限控制
-- 让模型在生成前拥有更稳定的裁决基础
-- 让“自然语言叙事”逐步转化为“可执行叙事接口”
+协议不得编造输入文本中未直接出现的设定、机制、关系或事实。
 
-这也是镜核叙事数据包协议引擎与普通写作 prompt、普通风格模仿、普通结构化标签表之间的根本区别。
+### 2. No completion of missing information ｜ 不补全未出现信息
+If something does not appear in the current text, it should not be automatically completed.
 
-## 当前阶段重点公开
+凡当前文本未出现的信息，不得自动补全。
 
-- 协议版本
-- 运行案例
-- 迭代痕迹
+### 3. Historical summaries are reference-only ｜ 历史摘要仅作参照
+The boundary summary from previous context may be used as a reference layer, but not as direct evidence for the current chapter.
 
-## 当前公开内容
+上文规则边界摘要只能作为参照层使用，不能直接替代本章证据。
 
-- 模块4：自然语言 → 叙事数据包 转译协议
-- 案例1：《三国演义》第一回 数据包 run-001
-- 运行观察1：《三国演义》第一回 run-001 运行观察
+### 4. L1 only records directly established anomalous facts ｜ L1 仅收当前文本直接成立的异常事实
+The L1 layer is restricted to anomaly-related facts directly established in the current text.
 
-## 当前仓库结构
+L1 层只允许收录当前文本中直接成立的异常事实。
 
-- `protocol/`：协议公开概览与版本文件
-- `cases/`：章节数据包案例
-- `notes/`：运行观察、迭代记录与测评备注
+### 5. Structural classification over literary interpretation ｜ 结构归类优先于文学解释
+The protocol extracts and organizes; it does not perform literary commentary or thematic interpretation.
 
-## 当前适合的对象
+协议负责抽取与归类，不负责文学评论或主题阐释。
 
-- 内容平台、IP开发、编辑策划等内容生产相关从业者
-- 剧本、游戏叙事、互动内容设计等结构化创作岗位
-- 需要将自然语言创意整理为标准化中间层数据的团队或个人
-- 对叙事结构工程化、流程化、可复用化有需求的创作者
+### 6. Distinctive author expressions should be retained ｜ 高辨识表达应尽量保留
+Original lines and highly identifiable expressions should be preserved whenever they carry execution value.
 
-## 也适合的对象
+当原句或高辨识表达具有执行价值时，应尽量保留。
 
-- 有明确长篇创作计划，并希望提升结构稳定性的作者
-- 希望将零散创意整理为可执行写作输入的个人创作者
+---
 
-## 说明
+## Boundary Summary ｜ 上文规则边界摘要
 
-本项目当前聚焦于叙事结构的上游整理、协议实践与案例运行，不直接提供正文成品生成。  
-本仓库用于公开记录协议版本、案例运行与迭代痕迹。  
-当前案例保留版本信息、运行轮次与校验状态，不伪装为最终定稿系统。
+After the current chapter is translated, the protocol produces an updated boundary summary based on the chapter result.
 
-## 长期蓝图
+This summary serves as a reference layer for later chapters, but it does not replace current-chapter textual evidence.
 
-镜核并不将“叙事数据包”视为单次写作辅助结果，而将其视为一种可沉淀、可复用、可迭代的中间层结构资产。
+协议在完成本章转译后，会基于本章结果生成更新后的上文规则边界摘要。
 
-长期目标不是停留在单个协议或单个案例，而是逐步形成一种面向内容生产的上游范式：  
-将自然语言创意转译为标准化、工程化、可积累的数据结构，进一步沉淀为可服务未来创作、协作与流程系统的叙事数据池。
+该摘要用于后续章节作为参照层使用，但不能替代当前章节的直接文本证据。
 
-如果这一方向成立，内容生产将不再只是依赖个人灵感的瞬时输出，而有机会进入从文本表达走向结构沉淀、从单次创作走向长期积累的新阶段。
+Its role is continuity control, not retroactive proof.
 
-## 联系方式
+它的作用是连续性控制，而不是反向充当证据来源。
+
+---
+
+## Why This Protocol Exists ｜ 为什么要做这个协议
+
+Narrative systems often fail not because they cannot produce text, but because they cannot keep boundaries stable.
+
+This specification is designed to reduce:
+
+- unauthorized expansion
+- evidence drift
+- confusion between current facts and historical memory
+- unstable narrative interfaces
+- uncontrolled interpretation in later stages
+
+很多叙事系统的问题，不是“写不出来”，而是“边界守不住”。
+
+本协议的价值在于压低以下风险：
+
+- 越权扩写
+- 证据漂移
+- 当前事实与历史记忆混淆
+- 叙事接口不稳定
+- 后续阶段的失控解释
+
+The upstream goal is not maximal creativity.  
+The upstream goal is a stable narrative interface.
+
+上游阶段的目标不是最大化创造性。  
+上游阶段的目标是建立一个稳定的叙事接口层。
+
+---
+
+## Relationship to Downstream Systems ｜ 与下游系统的关系
+
+This repository focuses on the upstream protocol only.
+
+Its outputs may be consumed by downstream or adjacent systems such as:
+
+- chapter generation protocols
+- consistency checking tools
+- narrative analysis workflows
+- editing pipelines
+- structured archival systems
+
+本仓库只聚焦上游协议本身。
+
+其输出结果可以被下游系统或相邻系统消费，例如：
+
+- 章节生成协议
+- 一致性校验工具
+- 叙事分析工作流
+- 编辑流程
+- 结构化归档系统
+
+A downstream chapter generator is only one consumer of this package format.
+
+下游章节生成器，只是这种数据包格式的一个消费端。
+
+---
+
+## Public Scope ｜ 当前公开范围
+
+This public repository currently includes:
+
+- protocol overview
+- example results
+- iteration traces
+- version markers
+- revision notes
+
+本公开仓库当前展示内容包括：
+
+- 协议概览
+- 案例结果
+- 运行轮次
+- 版本痕迹
+- 迭代备注
+
+---
+
+## Non-Public Scope ｜ 当前未公开范围
+
+The following materials are not fully disclosed in this public repository:
+
+- full runtime text
+- complete field definitions
+- full decision thresholds
+- complete constraint rules
+- complete forbid lists
+- detailed execution rules
+
+以下内容当前不在公开仓库中完整展示：
+
+- 完整运行文本
+- 全量字段细则
+- 全部判定阈值
+- 全部约束规则
+- 全部禁止项
+- 详细执行细则
+
+---
+
+## Current Status ｜ 当前状态
+
+**Project Name / 项目名称**  
+Upstream Narrative Package Protocol Specification  
+上游叙事数据包协议文本规范
+
+**Current Version / 当前版本**  
+v1.3
+
+**Edition / 文件类型**  
+Public Overview Edition  
+公开概览版
+
+**Current Track / 当前轨道**  
+Freeze-oriented iteration  
+冻结方向持续迭代
+
+**Historical Internal Label / 历史内部编号**  
+Module 4  
+模块4
+
+---
+
+## Intended Use ｜ 适用用途
+
+This specification is currently suitable for:
+
+- narrative package production
+- chapter-to-package conversion tests
+- package comparison across versions
+- continuity-boundary referencing
+- upstream/downstream interface design
+- protocol-oriented narrative workflow experiments
+
+本协议文本规范当前适用于：
+
+- 叙事数据包生产
+- 完整章节转数据包测试
+- 跨版本数据包对比
+- 连续性边界参照
+- 上下游接口设计
+- 协议化叙事工作流实验
+
+---
+
+## Not Intended For ｜ 非目标用途
+
+This repository is not intended as:
+
+- a free-writing AI system
+- a general-purpose summarizer
+- a literary interpretation framework
+- a direct chapter generation product
+- an automated story completion system
+
+本仓库并非以下用途的目标产品：
+
+- 自由写作型 AI 系统
+- 通用摘要器
+- 文学解释框架
+- 直接章节生成产品
+- 自动补全剧情系统
+
+---
+
+## One-Sentence Summary ｜ 一句话总结
+
+This project defines an upstream protocol specification that treats the narrative package itself as a reusable final product.
+
+本项目定义了一套上游协议文本规范，将叙事数据包本身视为可复用的最终产物。
+
+联系方式
 
 如对协议思路、案例结构或合作方向有明确交流意向，可通过以下邮箱联系：
 
-- 185555045@qq.com
-- jiaowodawa8@gmail.com
+185555045@qq.com
+jiaowodawa8@gmail.com
